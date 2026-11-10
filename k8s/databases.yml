@@ -1,10 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: songs-db
   namespace: k8s-program
 spec:
   replicas: 1
+  serviceName: songs-db
   selector:
     matchLabels:
       app: songs-db
@@ -19,8 +20,23 @@ spec:
           env:
             - name: POSTGRES_PASSWORD
               value: postgres
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           ports:
             - containerPort: 5432
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data                 # имя шаблона; PVC будет называться db-data-songs-db-0
+      spec:
+        storageClassName: local-path    # класс из kubectl get storageclass
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -28,18 +44,21 @@ metadata:
   name: songs-db
   namespace: k8s-program
 spec:
+  type: ClusterIP
   selector:
     app: songs-db
   ports:
     - port: 5432
+      targetPort: 5432
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: resources-db
   namespace: k8s-program
 spec:
   replicas: 1
+  serviceName: resources-db
   selector:
     matchLabels:
       app: resources-db
@@ -54,8 +73,23 @@ spec:
           env:
             - name: POSTGRES_PASSWORD
               value: postgres
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           ports:
             - containerPort: 5432
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data                 # имя шаблона; PVC будет называться db-data-resources-db-0
+      spec:
+        storageClassName: local-path    # класс из kubectl get storageclass
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -63,7 +97,9 @@ metadata:
   name: resources-db
   namespace: k8s-program
 spec:
+  type: ClusterIP
   selector:
     app: resources-db
   ports:
     - port: 5432
+      targetPort: 5432

@@ -21,8 +21,8 @@ spec:
           ports:
             - containerPort: 8081
           volumeMounts:
-            - name: songs-storage
-              mountPath: /data             # каталог внутри контейнера, который хранится на PV
+            - name: db-data                         # то же имя, что в volumeClaimTemplates
+              mountPath: /var/lib/postgresql/data   # здесь Postgres хранит данные
           env:
             - name: SONGS_DB_URL
               value: songs-db      # имя Service базы = её адрес в кластере
