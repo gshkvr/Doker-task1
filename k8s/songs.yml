@@ -20,6 +20,9 @@ spec:
           imagePullPolicy: IfNotPresent   # брать локальный образ, не качать из интернета
           ports:
             - containerPort: 8081
+          volumeMounts:
+            - name: songs-storage
+              mountPath: /data             # каталог внутри контейнера, который хранится на PV
           env:
             - name: SONGS_DB_URL
               value: songs-db      # имя Service базы = её адрес в кластере
@@ -27,6 +30,10 @@ spec:
               value: "5432"
             - name: SONGS_MS_PORT
               value: "8081"
+      volumes:
+        - name: songs-storage
+          persistentVolumeClaim:
+            claimName: songs-pvc           # ссылка на PVC ниже
 ---
 apiVersion: v1
 kind: Service
@@ -41,3 +48,18 @@ spec:
     - port: 8081                   # порт Service внутри кластера
       targetPort: 8081             # порт контейнера
       nodePort: 30081              # порт снаружи (30000–32767)
+---
+# PersistentVolumeClaim - запрос пода на хранилище. Привязывается к PV с тем же storageClassName.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: songs-pvc
+  namespace: k8s-program
+spec:
+  storageClassName: manual
+  volumeName: songs-pv               # привязать именно к нашему PV
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

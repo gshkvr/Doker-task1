@@ -1,0 +1,15 @@
+# PersistentVolume - "кусок" хранилища на ноде. Объект уровня кластера, namespace не указывается.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: songs-pv
+spec:
+  storageClassName: manual            # ручной провижининг: PV создаём сами, PVC привязывается к нему
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce                   # чтение/запись с одной ноды (обе реплики на одной ноде - ок)
+  persistentVolumeReclaimPolicy: Retain   # при удалении PVC данные на ноде сохраняются
+  hostPath:
+    path: /mnt/data/songs             # каталог на ноде
+    type: DirectoryOrCreate           # создать каталог, если его нет
